@@ -17,8 +17,7 @@ student_id INT PRIMARY KEY AUTO_INCREMENT,
 full_name VARCHAR(50) NOT NULL,
 major VARCHAR(100) NOT NULL,
 phone_number VARCHAR(15) NOT NULL UNIQUE,
-gpa DECIMAL(2,1)
-CONSTRAINT CHECK ( gpa >= 0.0 AND gpa <= 4.0) DEFAULT 4.0
+gpa DECIMAL(2,1)  DEFAULT 4.0 CHECK ( gpa >= 0.0 AND gpa <= 4.0)
 );
 
 CREATE TABLE enrollments (
@@ -166,8 +165,9 @@ GROUP BY e.student_id;
 SELECT * FROM vw_info_course_of_student;
 
 -- PHẦN 6: TRIGGER
--- Câu 1: Viết một trigger sao cho khi trạng thái của một bản ghi đăng ký enrollments 
--- được cập nhật sang giá trị Completed thì hệ thống tự động thêm 1 bản ghi mới vào academic_log với các thông tin sau
+-- Câu 2: Viêt một trigger sao cho khi thêm mới một bản ghi vào bảng enrolllments 
+-- có trạng thái Completed thì hệ thống tự động tăng điểm trung bình GPA của sinh 
+-- viên tương ứng trong bản student thêm 0.1, nhưng đảm bảo điểm GPA không vượt quá 4.0
 
 DELIMITER //
 CREATE TRIGGER trg_add_row 
@@ -175,9 +175,12 @@ AFTER UPDATE ON enrollments
 FOR EACH ROW
 
 BEGIN 
-IF status = 'Completed' THEN 
-INSERT VALUES 
-END;
+DECLARE v_detail_id INT;
+IF NEW.status ='Completed' AND OLD.status != 'Completed' THEN 
+UPDATE students 
+SET gpa = LEAST(gpa +0.1, 4.0)
+WHERE student_id  = NEW.student_id;
+END IF;
+END //
 DELIMITER ;
 
--- PHẦN 7: STORED PROCEDURE 
